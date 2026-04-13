@@ -2,9 +2,12 @@
 require_once('../classes/database.php');
 $con = new database();
 
+$borrowerCreatesStatus = null;
+$borrowerCreatesMessage = '';
+
 $data = $con->opencon();
 
-if(isset($_POST['add_borrower']));
+if(isset($_POST['add_borrower'])){
 
 //firstname, lastname, email, phone, member_since, is_active, temp_password
 $firstname = $_POST['borrower_firstname'];
@@ -15,11 +18,29 @@ $member_since = $_POST['borrower_member_since'];
 $is_active = $_POST['is_active'];
 $temp_password = $_POST['temp_password'];
 
-//second step password
+
+
+//step 2 password
 $password_hash = password_hash($temp_password, PASSWORD_DEFAULT);
 
+try{
 //Step 3 Inserting into users table and get new a user_id
 $user_id = $con->insertUser($email, $password_hash,$member_since, $is_active);
+
+//4 insert into borrowers table and get a new borrower_id
+$borrower_id = $con->InsertBorrower($firstname, $lastname,$email,$phone,$member_since,$is_active);
+//5 Insert into Borroweruser mapping(linking) table
+$con->insertBorrowerUser($user_id, $borrower_id);
+$borrowerCreatesStatus = 'success';
+$borrowerCreateMessage = 'Borrower created successfully'
+
+}catch(Exception $e){
+$borrowerCreatesStatus = 'error';
+$borrowerCreateMessage = 'error creating borrower';
+
+}
+
+}
 
 ?>
 
@@ -32,6 +53,9 @@ $user_id = $con->insertUser($email, $password_hash,$member_since, $is_active);
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../bootstrap-5.3.3-dist/css/bootstrap.css">
+
+  <link rel="stylesheet" href="../bootstrap/js/boostrap.bundle.min.js">
+  <link rel="stylesheet" href="../sweetalert/dist/sweetalert2.js">
 </head>
 <body>
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
@@ -259,5 +283,27 @@ $user_id = $con->insertUser($email, $password_hash,$member_since, $is_active);
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="../bootstrap/js/boostrap.bundle.min.js"></script>
+<script src="../sweetalert/dist/sweetalert2.js"></script>
+<script>
+
+  const createStatus = <?php echo json_encode($borrowerCreatesStatus) ?>;
+  const createMessage = <?php echo json_encode($borrowerCreateMessage) ?>;
+
+  if(createStatus == 'success'){
+    Swal.fire({
+      icon: 'success',
+      title:'success'.
+      text: createMessage,
+      confirmButtonText: 'OK'
+    });
+  } else if(createStatus == 'error')
+  Swal.fire({
+  icon: "error",
+  title: "Oops...",
+  text: "Something went wrong!",
+});
+</script>
 </body>
 </html>
