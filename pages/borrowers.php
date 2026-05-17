@@ -18,28 +18,54 @@ $member_since = $_POST['borrower_member_since'];
 $is_active = $_POST['is_active'];
 $temp_password = $_POST['temp_password'];
 
-
-
-//step 2 password
+//step 2: hash the password
 $password_hash = password_hash($temp_password, PASSWORD_DEFAULT);
 
 try{
 //Step 3 Inserting into users table and get new a user_id
-$user_id = $con->insertUser($email, $password_hash,$member_since, $is_active);
+$user_id = $con->insertUser($email, $password_hash, $is_active);
 
 //4 insert into borrowers table and get a new borrower_id
 $borrower_id = $con->InsertBorrower($firstname, $lastname,$email,$phone,$member_since,$is_active);
 //5 Insert into Borroweruser mapping(linking) table
 $con->insertBorrowerUser($user_id, $borrower_id);
-$borrowerCreatesStatus = 'success';
-$borrowerCreateMessage = 'Borrower created successfully'
-
 }catch(Exception $e){
+$borrowerCreatesStatus = 'success';
+$borrowerCreateMessage = 'Borrower created successfully';
+
+}
+}
+
 $borrowerCreatesStatus = 'error';
 $borrowerCreateMessage = 'error creating borrower';
 
-}
+if(isset($_POST['add_address'])){
 
+//firstname, lastname, email, phone, member_since, is_active, temp_password
+$borrowerid = $_POST['borrower_id'];
+$housenumber = $_POST['ba_house_number'];
+$street = $_POST['ba_street'];
+$barangay = $_POST['ba_barangay'];
+$city = $_POST['ba_city'];
+$province = $_POST['ba_province'];
+$postalcode = $_POST['ba_postal_code'];
+$is_active = $_POST['is_primary'];
+
+
+
+try{
+//step 6 insert borrower address
+$user_id = $con->insertBorrowerAddress($borrowerid, $housenumber, $street, $barangay, $city, $province, $postalcode, $is_active);
+}catch(Exception $e){
+$borrowerCreatesStatus = 'success';
+$borrowerCreateMessage = 'Borrower created successfully';
+
+}catch(Exception $e){
+
+
+$borrowerCreatesStatus = 'error';
+$borrowerCreateMessage = 'error creating borrower';
+}
 }
 
 ?>
@@ -66,10 +92,11 @@ $borrowerCreateMessage = 'error creating borrower';
     </button>
     <div id="navBorrowersAdmin" class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto gap-lg-1">
-        <li class="nav-item"><a class="nav-link" href="admin-dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="books.html">Books</a></li>
-        <li class="nav-item"><a class="nav-link active" href="borrowers.html">Borrowers</a></li>
-        <li class="nav-item"><a class="nav-link" href="checkout.html">Checkout</a></li>
+        <li class="nav-item"><a class="nav-link" href="admin-dashboard.php">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="books.php">Books</a></li>
+        <li class="nav-item"><a class="nav-link" href="authors-genres.php">Authors & Genres</a></li>
+        <li class="nav-item"><a class="nav-link active" href="borrowers.php">Borrowers</a></li>
+        <li class="nav-item"><a class="nav-link" href="checkout.php">Checkout</a></li>
         <li class="nav-item"><a class="nav-link" href="return.html">Return</a></li>
       </ul>
       <div class="d-flex align-items-center gap-2">
@@ -201,49 +228,52 @@ $borrowerCreateMessage = 'error creating borrower';
             <!-- Later in PHP: action="../php/addresses/create.php" method="POST" -->
             <form action="#" method="POST" class="row g-2">
               <div class="col-12">
-                <label class="form-label">Borrower</label>
-                <select class="form-select" name="borrower_id" required>
-                  <option value="">Select borrower</option>
-                  <option value="1">Juan Dela Cruz</option>
-                  <option value="2">Maria Santos</option>
-                  <option value="3">Mark Reyes</option>
-                  <option value="4">Ana Bautista</option>
-                  <option value="6">Grace Mendoza</option>
-                </select>
-              </div>
-              <div class="col-6">
-                <label class="form-label">House #</label>
-                <input class="form-control" name="ba_house_number">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Street</label>
-                <input class="form-control" name="ba_street">
-              </div>
-              <div class="col-12">
-                <label class="form-label">Barangay</label>
-                <input class="form-control" name="ba_barangay">
-              </div>
-              <div class="col-6">
-                <label class="form-label">City</label>
-                <input class="form-control" name="ba_city">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Province</label>
-                <input class="form-control" name="ba_province">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Postal Code</label>
-                <input class="form-control" name="ba_postal_code">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Primary?</label>
-                <select class="form-select" name="is_primary">
-                  <option value="1">Yes</option>
-                  <option value="0" selected>No</option>
-                </select>
-              </div>
-              <div class="col-12">
-                <button class="btn btn-outline-primary w-100" type="submit">Add Address</button>
+  <label class="form-label">Borrower</label>
+  <select class="form-select" name="borrower_id" required>
+    <option value="">Select borrower</option>
+    <?php
+    $allborrowers = $con->viewborrowers();
+    foreach ($allborrowers as $borrowers) {
+      echo '<option value="' . $borrowers['borrowers_id'] . '">' . 
+          $borrowers['borrower_firstname'] . ' ' . $borrowers['borrower_lastname'] . 
+          '</option>';
+    }
+    ?>
+  </select>  
+</div>
+<div class="col-6">
+  <label class="form-label">House #</label>
+  <input class="form-control" name="ba_house_number">
+</div>
+<div class="col-6">
+  <label class="form-label">Street</label>
+  <input class="form-control" name="ba_street">
+</div>
+<div class="col-12">
+  <label class="form-label">Barangay</label>
+  <input class="form-control" name="ba_barangay">
+</div>
+<div class="col-6">
+  <label class="form-label">City</label>
+  <input class="form-control" name="ba_city">
+</div>
+<div class="col-6">
+  <label class="form-label">Province</label>
+  <input class="form-control" name="ba_province">
+</div>
+<div class="col-6">
+  <label class="form-label">Postal Code</label>
+  <input class="form-control" name="ba_postal_code">
+</div>
+<div class="col-6">
+  <label class="form-label">Primary?</label>
+  <select class="form-select" name="is_primary">
+    <option value="1">Yes</option>
+    <option value="0" selected>No</option>
+  </select>
+</div>
+<di class="col-12">
+  <button class="btn btn-outline-primary w-100" type="submit" name="address">Add Address</button>
               </div>
             </form>
           </div>
@@ -255,7 +285,7 @@ $borrowerCreateMessage = 'error creating borrower';
   </div>
 </main>
 
-<!-- Reset Password Modal (UI only) -->
+
 <div class="modal fade" id="resetPassModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -294,8 +324,8 @@ $borrowerCreateMessage = 'error creating borrower';
   if(createStatus == 'success'){
     Swal.fire({
       icon: 'success',
-      title:'success'.
-      text: createMessage,
+      title:'success',
+      text: createMessage, 
       confirmButtonText: 'OK'
     });
   } else if(createStatus == 'error')
@@ -306,4 +336,4 @@ $borrowerCreateMessage = 'error creating borrower';
 });
 </script>
 </body>
-</html>
+</html> 
