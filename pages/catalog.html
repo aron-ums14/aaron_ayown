@@ -1,3 +1,104 @@
+<?php
+
+function getActiveBorrowers() {
+    $con = $this->opencon();
+    return $con->query("
+        SELECT 
+            borrower_id, 
+            CONCAT(borrower_firstname, ' ', borrower_lastname) AS borrower_name 
+        FROM borrowers 
+        WHERE is_active = 1 
+        ORDER BY borrower_name
+    ")->fetchAll();
+}
+
+function getAvailableCopies() {
+    $con = $this->opencon();
+    return $con->query("
+        SELECT
+            bookcopy.copy_id, 
+            books.book_id, 
+            books.book_title, 
+            bookcopy.status 
+        FROM bookcopy 
+        JOIN books ON bookcopy.book_id = books.book_id
+        WHERE bookcopy.status = 'AVAILABLE'
+        ORDER BY books.book_title, bookcopy.copy_id
+    ")->fetchAll();
+}
+
+function createLoanWithItems($borrower_id, $processed_by_user_id, $copy_ids, $li_duedate, $condition_out) {
+    $con = $this->opencon();
+
+    try {
+        $con->beginTransaction();
+
+        // Insert loan record
+        $insertLoanStmt = $con->prepare("
+            INSERT INTO loan(borrower_id, processed_by_user_id, loan_status, loan_date)
+            VALUES (?, ?, 'OPEN', NOW())
+        ");
+        $insertLoanStmt->execute([$borrower_id, $processed_by_user_id]);
+
+        $loan_id = $con->lastInsertId();
+
+        // Prepare statements for checking and updating
+        $checkCopyStmt = $con->prepare("
+            SELECT status FROM BookCopy WHERE copy_id = ?
+        ");
+        
+        $activeLoanStmt = $con->prepare("
+            SELECT COUNT(*) as active_count FROM LoanItem
+            JOIN Loan ON LoanItem.loan_id = Loan.loan_id
+            WHERE LoanItem.copy_id = ?
+            AND LoanItem.li_returned_at IS NULL
+            AND Loan.loan_status = 'OPEN'
+        ");
+        
+        $insertLoanItemStmt = $con->prepare("
+            INSERT INTO LoanItem(loan_id, copy_id, li_duedate, condition_out)
+            VALUES (?, ?, ?, ?)
+        ");
+        
+        $updateCopyStmt = $con->prepare("
+            UPDATE BookCopy SET status = 'CHECKED_OUT' WHERE copy_id = ?
+        ");
+
+        // Process each copy
+        foreach ($copy_ids as $copy_id) {
+            $checkCopyStmt->execute([$copy_id]);
+            $copyStatus = $checkCopyStmt->fetch();
+
+            if (!$copyStatus) {
+                throw new Exception("Copy ID $copy_id does not exist.");
+            }
+
+            if ($copyStatus['status'] !== 'AVAILABLE') {
+                throw new Exception("Copy ID $copy_id is not available.");
+            }
+
+            $activeLoanStmt->execute([$copy_id]);
+            $activeLoan = $activeLoanStmt->fetch();
+
+            if ($activeLoan['active_count'] > 0) {
+                throw new Exception("Copy ID $copy_id already on active loan.");
+            }
+
+            $insertLoanItemStmt->execute([$loan_id, $copy_id, $li_duedate, $condition_out]);
+            $updateCopyStmt->execute([$copy_id]);
+        }
+
+        $con->commit();
+        return $loan_id;
+
+    } catch (Exception $e) {
+        $con->rollBack();
+        throw $e;
+    }
+}
+
+?>
+
 <!doctype html>
 <html lang="en">
 <head>

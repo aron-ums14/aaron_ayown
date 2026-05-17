@@ -1,51 +1,97 @@
 <?php
-
-require_once('../classes/database.php');
+session_start();
+require_once('../Classes/database.php');
 $con = new database();
 
-$data = $con->opencon();
+$bookstatus = null;
+$bookmessage = '';
 
-$books_create_status = null;
-$books_create_message = '';
+// Handle Add Book
+if(isset($_POST['add_books'])){
+    $booktitle = $_POST['book_title'];
+    $bookisbns = $_POST['book_isbn'];
+    $book_pub_year = $_POST['book_publication_year'];
+    $bookedition = $_POST['book_edition'];
+    $bookpublisher = $_POST['book_publisher'];
 
-if (isset($_POST['add_book'])) {
     try {
-        $book_title = $_POST['book_title'];
-        $book_isbn = $_POST['book_isbn'];
-        $book_publication_year = $_POST['book_publication_year'];
-        $book_edition = $_POST['book_edition'];
-        $book_publisher = $_POST['book_publisher'];
-
-        $con->insertBooks($book_title, $book_isbn, $book_publication_year, $book_edition, $book_publisher);
-
-        $book_create_status = 'success';
-        $book_create_message = 'Book added successfully!';
-    } catch (Exception $e) { 
-        $book_create_status = 'unsuccessful';
-        $book_create_message = $e->getMessage(); // This will now say "This ISBN is already..."
+        $con->insertBooks($booktitle, $bookisbns, $book_pub_year, $bookedition, $bookpublisher);
+        $bookstatus = 'success';
+        $bookmessage = 'Book added successfully';
+    } catch(Exception $e) {
+        $bookstatus = 'error';
+        $bookmessage = $e->getMessage();
     }
 }
 
-if (isset($_POST['add_copy'])) {
-
-  try {
+// Handle Add Book Copy
+if(isset($_POST['add_copy'])){
     $book_id = $_POST['book_id'];
-    $book_status = $_POST['status'];
-    
+    $status = $_POST['status'];
 
-    $book_id = $con->insertBookCopy($book_id, $book_status);
-
-    $book_create_status = 'success';
-    $book_create_message = 'Borrower Created succesfuly';
-  } catch (PDOException $e) { 
-    throw $e;
-    $book_create_status = 'unsuccessful';
-    $book_create_message = $e->getMessage();
-  }
-
-
+    try {
+        $con->insertBookCopy($book_id, $status);
+        $bookstatus = 'success';
+        $bookmessage = 'Book copy added successfully';
+    } catch(Exception $e) {
+        $bookstatus = 'error';
+        $bookmessage = $e->getMessage();
+    }
 }
 
+// Handle Assign Author
+if(isset($_POST['assign_author'])){
+    $book_id = $_POST['book_id'];
+    $author_id = $_POST['author_id'];
+
+    try {
+        $con->insertBookAuthor($book_id, $author_id);
+        $bookstatus = 'success';
+        $bookmessage = 'Author assigned to book successfully';
+    } catch(Exception $e) {
+        $bookstatus = 'error';
+        $bookmessage = $e->getMessage();
+    }
+}
+
+// Handle Assign Genre
+if(isset($_POST['assign_genre'])){
+    $book_id = $_POST['book_id'];
+    $genre_id = $_POST['genre_id'];
+
+    try {
+        $con->insertBookGenre($book_id, $genre_id);
+        $bookstatus = 'success';
+        $bookmessage = 'Genre assigned to book successfully';
+    } catch(Exception $e) {
+        $bookstatus = 'error';
+        $bookmessage = $e->getMessage();
+    }
+}
+
+// Handle Edit Book
+if(isset($_POST['update_book'])){
+    $book_id = $_POST['book_id'];
+    $booktitle = $_POST['book_title'];
+    $bookisbns = $_POST['book_isbn'];
+    $book_pub_year = $_POST['book_publication_year'];
+    $bookpublisher = $_POST['book_publisher'];
+
+    try {
+        $con->updateBook($book_id, $booktitle, $bookisbns, $book_pub_year, $bookpublisher);
+        $bookstatus = 'success';
+        $bookmessage = 'Book updated successfully';
+    } catch(Exception $e) {
+        $bookstatus = 'error';
+        $bookmessage = $e->getMessage();
+    }
+}
+
+// Fetch books, authors, and genres
+$allbooks = $con->viewbooks();
+$books = $con->getBooks();
+$authors = $con->getAuthors();
+$genres = $con->getGenres();
 ?>
 
 <!doctype html>
@@ -61,22 +107,23 @@ if (isset($_POST['add_copy'])) {
 <body>
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
   <div class="container">
-    <a class="navbar-brand fw-semibold" href="admin-dashboard.html">Library Admin</a>
+    <a class="navbar-brand fw-semibold" href="admin-dashboard.php">Library Admin</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navBooks">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div id="navBooks" class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto gap-lg-1">
-        <li class="nav-item"><a class="nav-link" href="admin-dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link active" href="books.html">Books</a></li>
-        <li class="nav-item"><a class="nav-link" href="borrowers.html">Borrowers</a></li>
-        <li class="nav-item"><a class="nav-link" href="checkout.html">Checkout</a></li>
-        <li class="nav-item"><a class="nav-link" href="return.html">Return</a></li>
-        <li class="nav-item"><a class="nav-link" href="catalog.html">Catalog</a></li>
+        <li class="nav-item"><a class="nav-link" href="admin-dashboard.php">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link active" href="books.php">Books</a></li>
+        <li class="nav-item"><a class="nav-link" href="borrowers.php">Borrowers</a></li>
+        <li class="nav-item"><a class="nav-link" href="authors-genres.php">Authors &amp; Genres</a></li>
+        <li class="nav-item"><a class="nav-link" href="checkout.php">Checkout</a></li>
+        <li class="nav-item"><a class="nav-link" href="return.php">Return</a></li>
+        <li class="nav-item"><a class="nav-link" href="catalog.php">Catalog</a></li>
       </ul>
       <div class="d-flex align-items-center gap-2">
         <span class="badge badge-soft">Role: ADMIN</span>
-        <a class="btn btn-sm btn-outline-secondary" href="login.html">Logout</a>
+        <a class="btn btn-sm btn-outline-secondary" href="login.php">Logout</a>
       </div>
     </div>
   </div>
@@ -84,15 +131,14 @@ if (isset($_POST['add_copy'])) {
 
 <main class="container py-4">
   <div class="row g-3">
+    <!-- Left Column - Forms -->
     <div class="col-12 col-lg-4">
       <div class="card p-4">
         <h5 class="mb-1">Add Book</h5>
         <p class="small-muted mb-3">Creates a row in <b>Books</b>.</p>
-
-        <!-- Later in PHP: action="../php/books/create.php" method="POST" -->
-        <form action="#" method="POST">
+        <form action="" method="POST">
           <div class="mb-3">
-            <label class="form-label">Title</label>
+            <label class="form-label">Title <span class="text-danger">*</span></label>
             <input class="form-control" name="book_title" required>
           </div>
           <div class="mb-3">
@@ -101,7 +147,7 @@ if (isset($_POST['add_copy'])) {
           </div>
           <div class="mb-3">
             <label class="form-label">Publication Year</label>
-            <input class="form-control" name="book_publication_year" type="number" min="1500" max="2100" placeholder="optional">
+            <input class="form-control" name="book_publication_year" type="number" min="1500" max="2100">
           </div>
           <div class="mb-3">
             <label class="form-label">Edition</label>
@@ -111,32 +157,27 @@ if (isset($_POST['add_copy'])) {
             <label class="form-label">Publisher</label>
             <input class="form-control" name="book_publisher" placeholder="optional">
           </div>
-          <button name="add_book" class="btn btn-primary w-100" type="submit">Save Book</button>
+          <button class="btn btn-primary w-100" type="submit" name="add_books">Save Book</button>
         </form>
       </div>
 
       <div class="card p-4 mt-3">
         <h6 class="mb-2">Add Copy</h6>
         <p class="small-muted mb-3">Creates a row in <b>BookCopy</b>.</p>
-        <!-- Later in PHP: action="../php/copies/create.php" method="POST" -->
-        <form action="#" method="POST">
+        <form action="" method="POST">
           <div class="mb-3">
-            <label class="form-label">Book</label>
+            <label class="form-label">Book <span class="text-danger">*</span></label>
             <select class="form-select" name="book_id" required>
               <option value="">Select book</option>
-              <?php 
-                    
-                      $allbooks = $con->viewbooks();
-                      foreach($allbooks as $books){
-                       echo '<option value="'.$books['book_id'].'">'.'['.''.$books['book_id'].''.']'.''.$books['book_title'].'</option>';
-                      } 
-                    
-                    ?>
+              <?php foreach($books as $book): ?>
+              <option value="<?php echo $book['book_id']; ?>">[<?php echo $book['book_id']; ?>] <?php echo htmlspecialchars($book['book_title']); ?></option>
+              <?php endforeach; ?>
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Status</label>
+            <label class="form-label">Status <span class="text-danger">*</span></label>
             <select class="form-select" name="status" required>
+              <option value="">Select status</option>
               <option value="AVAILABLE">AVAILABLE</option>
               <option value="ON_LOAN">ON_LOAN</option>
               <option value="LOST">LOST</option>
@@ -144,17 +185,18 @@ if (isset($_POST['add_copy'])) {
               <option value="REPAIR">REPAIR</option>
             </select>
           </div>
-          <button name="add_copy"class="btn btn-outline-primary w-100" type="submit">Add Copy</button>
+          <button class="btn btn-outline-primary w-100" type="submit" name="add_copy">Add Copy</button>
         </form>
       </div>
     </div>
 
+    <!-- Right Column - Table & Assign Forms -->
     <div class="col-12 col-lg-8">
       <div class="card p-4">
         <div class="d-flex flex-wrap gap-2 justify-content-between align-items-end mb-3">
           <div>
             <h5 class="mb-1">Books List</h5>
-            <div class="small-muted">Placeholder rows. Replace with PHP + MySQL output.</div>
+            <div class="small-muted"><?php echo count($allbooks) . ' book' . (count($allbooks) != 1 ? 's' : '') . ' in database'; ?></div>
           </div>
           <div class="d-flex gap-2">
             <input class="form-control" style="max-width: 260px;" placeholder="Search title / ISBN...">
@@ -177,31 +219,28 @@ if (isset($_POST['add_copy'])) {
               </tr>
             </thead>
             <tbody>
-  <?php 
-    $viewbooks = $con->viewbooks();
-    foreach($viewbooks as $row) {
-  ?>
-  <tr>
-    <td><?php echo $row['book_id']; ?></td>
-    <td><?php echo $row['book_title']; ?></td>
-    <td><?php echo $row['book_isbn']; ?></td>
-    <td><?php echo $row['book_publication_year']; ?></td>
-    <td><?php echo $row['book_publisher']; ?></td>
-    <td><?php echo $row['Copies']; ?></td>
-    <td>
-        <?php if($row['Available_Copies'] > 0): ?>
-            <span class="badge text-bg-success"><?php echo $row['Available_Copies']; ?></span>
-        <?php else: ?>
-            <span class="badge text-bg-danger">0</span>
-        <?php endif; ?>
-    </td>
-    <td class="text-end">
-      <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBookModal">Edit</button>
-      <button class="btn btn-sm btn-outline-danger">Delete</button>
-    </td>
-  </tr>
-  <?php } ?>
-</tbody>
+              <?php
+              foreach ($allbooks as $book) {
+                echo '<tr>';
+                echo '<td>' . htmlspecialchars($book['book_id']) . '</td>';
+                echo '<td>' . htmlspecialchars($book['book_title']) . '</td>';
+                echo '<td>' . htmlspecialchars($book['book_isbn'] ?? '') . '</td>';
+                echo '<td>' . htmlspecialchars($book['book_publication_year'] ?? '-') . '</td>';
+                echo '<td>' . htmlspecialchars($book['book_publisher'] ?? '') . '</td>';
+                echo '<td class="text-center">' . ($book['Copies'] ?? 0) . '</td>';
+                echo '<td class="text-center"><span class="badge bg-success">' . ($book['Available_Copies'] ?? 0) . '</span></td>';
+                echo '<td class="text-end">';
+                echo '<button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBookModal"
+                  data-book-id="' . htmlspecialchars($book['book_id']) . '"
+                  data-book-title="' . htmlspecialchars($book['book_title'], ENT_QUOTES) . '"
+                  data-book-isbn="' . htmlspecialchars($book['book_isbn'] ?? '', ENT_QUOTES) . '"
+                  data-book-year="' . htmlspecialchars($book['book_publication_year'] ?? '', ENT_QUOTES) . '"
+                  data-book-publisher="' . htmlspecialchars($book['book_publisher'] ?? '', ENT_QUOTES) . '">Edit</button>';
+                echo '</td>';
+                echo '</tr>';
+              }
+              ?>
+            </tbody>
           </table>
         </div>
 
@@ -212,25 +251,25 @@ if (isset($_POST['add_copy'])) {
             <div class="border rounded p-3">
               <h6 class="mb-2">Assign Author to Book</h6>
               <p class="small-muted mb-3">Creates a row in <b>BookAuthors</b>.</p>
-              <!-- Later in PHP: action="../php/bookauthors/create.php" method="POST" -->
-              <form action="#" method="POST" class="row g-2">
+              <form action="" method="POST" class="row g-2">
                 <div class="col-12 col-md-6">
                   <select class="form-select" name="book_id" required>
                     <option value="">Select book</option>
-                    <option value="1">Noli Me Tangere</option>
-                    <option value="2">El Filibusterismo</option>
+                    <?php foreach($books as $book): ?>
+                    <option value="<?php echo $book['book_id']; ?>"><?php echo htmlspecialchars($book['book_title']); ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-12 col-md-6">
                   <select class="form-select" name="author_id" required>
                     <option value="">Select author</option>
-                    <option value="1">Jose Rizal</option>
-                    <option value="2">Amado Hernandez</option>
-                    <option value="3">F. H. Batacan</option>
+                    <?php foreach($authors as $author): ?>
+                    <option value="<?php echo $author['author_id']; ?>"><?php echo htmlspecialchars($author['author_firstname'] . ' ' . $author['author_lastname']); ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-12">
-                  <button class="btn btn-outline-primary w-100" type="submit">Assign</button>
+                  <button class="btn btn-outline-primary w-100" type="submit" name="assign_author">Assign</button>
                 </div>
               </form>
               <div class="small-muted mt-2">Unique constraint prevents duplicate (book_id, author_id).</div>
@@ -241,37 +280,37 @@ if (isset($_POST['add_copy'])) {
             <div class="border rounded p-3">
               <h6 class="mb-2">Assign Genre to Book</h6>
               <p class="small-muted mb-3">Creates a row in <b>BookGenre</b>.</p>
-              <!-- Later in PHP: action="../php/bookgenre/create.php" method="POST" -->
-              <form action="#" method="POST" class="row g-2">
+              <form action="" method="POST" class="row g-2">
                 <div class="col-12 col-md-6">
                   <select class="form-select" name="book_id" required>
                     <option value="">Select book</option>
-                    <option value="1">Noli Me Tangere</option>
-                    <option value="2">El Filibusterismo</option>
+                    <?php foreach($books as $book): ?>
+                    <option value="<?php echo $book['book_id']; ?>"><?php echo htmlspecialchars($book['book_title']); ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-12 col-md-6">
                   <select class="form-select" name="genre_id" required>
                     <option value="">Select genre</option>
-                    <option value="1">Classic</option>
-                    <option value="5">Philippine Literature</option>
+                    <?php foreach($genres as $genre): ?>
+                    <option value="<?php echo $genre['genre_id']; ?>"><?php echo htmlspecialchars($genre['genre_name']); ?></option>
+                    <?php endforeach; ?>
                   </select>
                 </div>
                 <div class="col-12">
-                  <button class="btn btn-outline-primary w-100" type="submit">Assign</button>
+                  <button class="btn btn-outline-primary w-100" type="submit" name="assign_genre">Assign</button>
                 </div>
               </form>
               <div class="small-muted mt-2">Unique constraint prevents duplicate (genre_id, book_id).</div>
             </div>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 </main>
 
-<!-- Edit Book Modal (UI only) -->
+<!-- Edit Book Modal -->
 <div class="modal fade" id="editBookModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -280,49 +319,68 @@ if (isset($_POST['add_copy'])) {
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <!-- Later in PHP: load existing values -->
-        <form action="#" method="POST">
+        <form action="" method="POST">
+          <input type="hidden" name="book_id" id="edit-book-id">
           <div class="mb-3">
             <label class="form-label">Title</label>
-            <input class="form-control" value="Noli Me Tangere">
+            <input class="form-control" name="book_title" id="edit-book-title" required>
           </div>
           <div class="mb-3">
             <label class="form-label">ISBN</label>
-            <input class="form-control" value="9789710810736">
+            <input class="form-control" name="book_isbn" id="edit-book-isbn">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Publication Year</label>
+            <input class="form-control" name="book_publication_year" id="edit-book-year" type="number" min="1500" max="2100">
           </div>
           <div class="mb-3">
             <label class="form-label">Publisher</label>
-            <input class="form-control" value="National Book Store">
+            <input class="form-control" name="book_publisher" id="edit-book-publisher">
           </div>
-          <button class="btn btn-primary w-100" type="button">Save Changes</button>
+          <button class="btn btn-primary w-100" type="submit" name="update_book">Save Changes</button>
         </form>
       </div>
     </div>
   </div>
 </div>
-  <script src="../bootstrap-5.3.3-dist/js/bootstrap.js"></script>
-  <script src="../sweetalert/dist/sweetalert2.min.js"></script>
-  
-</body>
+
+<script src="../bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+<script src="../sweetalert/dist/sweetalert2.min.js"></script>
+
 <script>
+const bookStatus = <?php echo json_encode($bookstatus) ?>;
+const bookMessage = <?php echo json_encode($bookmessage) ?>;
 
-const createStatus = <?php echo json_encode($book_create_status) ?>;
-const createMessage = <?php echo json_encode($book_create_message) ?>;
-
-if (createStatus == "success") {
+if(bookStatus == 'success') {
   Swal.fire({
-    icon: "success",
-    title: "Succesful Account Creation...",
-    text: createMessage,
-    footer: "<a href=\"#\"></a>"
+    icon: 'success',
+    title: 'Success',
+    text: bookMessage,
+    confirmButtonText: 'OK'
   });
-}else if (createStatus == "unsuccessful"){
+} else if(bookStatus == 'error') {
   Swal.fire({
-    icon: "error",
-    title: "Error Account Creation...",
-    text: createMessage,
-    footer: "<a href=\"#\"></a>"
+    icon: 'error',
+    title: 'Error',
+    text: bookMessage,
+    confirmButtonText: 'OK'
   });
 }
 </script>
+
+<script>
+const editModal = document.getElementById('editBookModal');
+ 
+editModal.addEventListener('show.bs.modal', function (event) {
+  const btn = event.relatedTarget;
+  if (!btn) return;
+ 
+  document.getElementById('edit-book-id').value = btn.getAttribute('data-book-id') || '';
+  document.getElementById('edit-book-title').value = btn.getAttribute('data-book-title') || '';
+  document.getElementById('edit-book-isbn').value = btn.getAttribute('data-book-isbn') || '';
+  document.getElementById('edit-book-year').value = btn.getAttribute('data-book-year') || '';
+  document.getElementById('edit-book-publisher').value = btn.getAttribute('data-book-publisher') || '';
+});
+</script>
+</body>
 </html>

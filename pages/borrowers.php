@@ -1,4 +1,3 @@
-
 <?php
 require_once('../classes/database.php');
 $con = new database();
@@ -93,10 +92,11 @@ $borrowerCreateMessage = 'error creating borrower';
     </button>
     <div id="navBorrowersAdmin" class="collapse navbar-collapse">
       <ul class="navbar-nav me-auto gap-lg-1">
-        <li class="nav-item"><a class="nav-link" href="admin-dashboard.html">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="books.html">Books</a></li>
-        <li class="nav-item"><a class="nav-link active" href="borrowers.html">Borrowers</a></li>
-        <li class="nav-item"><a class="nav-link" href="checkout.html">Checkout</a></li>
+        <li class="nav-item"><a class="nav-link" href="admin-dashboard.php">Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="books.php">Books</a></li>
+        <li class="nav-item"><a class="nav-link" href="authors-genres.php">Authors & Genres</a></li>
+        <li class="nav-item"><a class="nav-link active" href="borrowers.php">Borrowers</a></li>
+        <li class="nav-item"><a class="nav-link" href="checkout.php">Checkout</a></li>
         <li class="nav-item"><a class="nav-link" href="return.html">Return</a></li>
       </ul>
       <div class="d-flex align-items-center gap-2">
@@ -228,61 +228,52 @@ $borrowerCreateMessage = 'error creating borrower';
             <!-- Later in PHP: action="../php/addresses/create.php" method="POST" -->
             <form action="#" method="POST" class="row g-2">
               <div class="col-12">
-                <label class="form-label">Borrower</label>
-                <select class="form-select" name="borrower_id" required>
-                  <option value="">Select borrower</option>
-                  <option value="1">Juan Dela Cruz</option>
-                  <option value="2">Maria Santos</option>
-                  <option value="3">Mark Reyes</option>
-                  <option value="4">Ana Bautista</option>
-                  <option value="6">Grace Mendoza</option>
-                </select>
-
-<select class="form-select" name="borrower_id" required>
-  <option value="">Select borrower</option>
-  <?php
-  $allborrowers = $con->viewborrowers();
-  foreach ($allborrowers as $borrowers){
-    echo '<option value="'.$borrowers['borrowers_id'].'">' 
-        .$borrowers['borrower_firstname'].' '.$borrowers['borrower_lastname'].
-        '</option>'; 
-  }
-  ?>
-</select>  
-              </div>
-              <div class="col-6">
-                <label class="form-label">House #</label>
-                <input class="form-control" name="ba_house_number">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Street</label>
-                <input class="form-control" name="ba_street">
-              </div>
-              <div class="col-12">
-                <label class="form-label">Barangay</label>
-                <input class="form-control" name="ba_barangay">
-              </div>
-              <div class="col-6">
-                <label class="form-label">City</label>
-                <input class="form-control" name="ba_city">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Province</label>
-                <input class="form-control" name="ba_province">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Postal Code</label>
-                <input class="form-control" name="ba_postal_code">
-              </div>
-              <div class="col-6">
-                <label class="form-label">Primary?</label>
-                <select class="form-select" name="is_primary">
-                  <option value="1">Yes</option>
-                  <option value="0" selected>No</option>
-                </select>
-              </div>
-              <div class="col-12">
-                <button class="btn btn-outline-primary w-100" type="submit" name="address">Add Address</button>
+  <label class="form-label">Borrower</label>
+  <select class="form-select" name="borrower_id" required>
+    <option value="">Select borrower</option>
+    <?php
+    $allborrowers = $con->viewborrowers();
+    foreach ($allborrowers as $borrowers) {
+      echo '<option value="' . $borrowers['borrowers_id'] . '">' . 
+          $borrowers['borrower_firstname'] . ' ' . $borrowers['borrower_lastname'] . 
+          '</option>';
+    }
+    ?>
+  </select>  
+</div>
+<div class="col-6">
+  <label class="form-label">House #</label>
+  <input class="form-control" name="ba_house_number">
+</div>
+<div class="col-6">
+  <label class="form-label">Street</label>
+  <input class="form-control" name="ba_street">
+</div>
+<div class="col-12">
+  <label class="form-label">Barangay</label>
+  <input class="form-control" name="ba_barangay">
+</div>
+<div class="col-6">
+  <label class="form-label">City</label>
+  <input class="form-control" name="ba_city">
+</div>
+<div class="col-6">
+  <label class="form-label">Province</label>
+  <input class="form-control" name="ba_province">
+</div>
+<div class="col-6">
+  <label class="form-label">Postal Code</label>
+  <input class="form-control" name="ba_postal_code">
+</div>
+<div class="col-6">
+  <label class="form-label">Primary?</label>
+  <select class="form-select" name="is_primary">
+    <option value="1">Yes</option>
+    <option value="0" selected>No</option>
+  </select>
+</div>
+<di class="col-12">
+  <button class="btn btn-outline-primary w-100" type="submit" name="address">Add Address</button>
               </div>
             </form>
           </div>
@@ -346,4 +337,3 @@ $borrowerCreateMessage = 'error creating borrower';
 </script>
 </body>
 </html> 
-
